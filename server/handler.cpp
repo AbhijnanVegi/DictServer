@@ -11,7 +11,6 @@
 #include <fcntl.h>
 #include <pthread.h>
 
-
 //////////////
 #include <iostream>
 #include <assert.h>
@@ -19,7 +18,6 @@
 #include <queue>
 #include <string>
 #include <map>
-
 
 using namespace std;
 
@@ -30,9 +28,9 @@ map<int, val> M;
 
 void init_dict(void)
 {
-    for (int i = 0; i <= 100;i++)
+    for (int i = 0; i <= 100; i++)
     {
-        pthread_mutex_init(&M[i].lock,NULL);
+        pthread_mutex_init(&M[i].lock, NULL);
         M[i].s = "";
     }
 }
@@ -64,7 +62,6 @@ int send_string_on_socket(int fd, const string &s)
     return bytes_sent;
 }
 
-
 string process_cmd(string cmd)
 {
     string op = cmd.substr(0, cmd.find(" "));
@@ -78,14 +75,14 @@ string process_cmd(string cmd)
         if (M[key].s.empty())
         {
             M[key].s = value;
-            ret =  "Insertion successful";
+            ret = "Insertion successful";
         }
         else
         {
             ret = "Key already exists";
         }
         pthread_mutex_unlock(&M[key].lock);
-    } 
+    }
     else if (op == "delete")
     {
         string tmp = cmd.substr(cmd.find(" ") + 1);
@@ -108,8 +105,6 @@ string process_cmd(string cmd)
         string tmp = cmd.substr(cmd.find(" ") + 1);
         int key = stoi(tmp.substr(0, tmp.find(" ")));
         string value = tmp.substr(tmp.find(" ") + 1);
-
-
 
         pthread_mutex_lock(&M[key].lock);
         if (M[key].s.size())
@@ -179,20 +174,20 @@ string process_cmd(string cmd)
 
 void *handler(void *arg)
 {
-    pthread_mutex_lock(&requests_lock);
-    while (requests.empty())
+    for (;;)
     {
-        pthread_cond_wait(&requests_cond, &requests_lock);
-    }
-    int client_sock = requests.front();
-    requests.pop();
-    pthread_mutex_unlock(&requests_lock);
-    int received_num, sent_num;
+        pthread_mutex_lock(&requests_lock);
+        while (requests.empty())
+        {
+            pthread_cond_wait(&requests_cond, &requests_lock);
+        }
+        int client_sock = requests.front();
+        requests.pop();
+        pthread_mutex_unlock(&requests_lock);
+        int received_num, sent_num;
 
-    int ret_val = 1;
+        int ret_val = 1;
 
-    while (true)
-    {
         string cmd;
         string msg_to_send_back;
         int sent_to_client;
@@ -206,6 +201,7 @@ void *handler(void *arg)
         cout << "Client sent : " << cmd << endl;
         msg_to_send_back = process_cmd(cmd);
 
+        sleep(2);
         sent_to_client = send_string_on_socket(client_sock, msg_to_send_back);
         // debug(sent_to_client);
         if (sent_to_client == -1)
@@ -213,11 +209,10 @@ void *handler(void *arg)
             perror("Error while writing to client. Seems socket has been closed");
             goto close_client_socket_ceremony;
         }
-close_client_socket_ceremony:;
+    close_client_socket_ceremony:;
         close(client_sock);
-        cout << "Thread " << pthread_self() << " finished handling requests" << endl;
+        cout << "Thread " << pthread_self() << " finished handling request" << endl;
     }
-
     return NULL;
 }
 

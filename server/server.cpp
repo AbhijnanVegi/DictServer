@@ -48,13 +48,12 @@ void start_server(int num_req)
         exit(1);
     }
 
-    listen(wel_sock, num_req);
-    cout << "Server is listening on port" << PORT << endl;
+    listen(wel_sock, 1024);
+    cout << "Server is listening on port: " << PORT << endl;
     socklen_t client_len = sizeof(client_addr);
 
     while (1)
     {
-        cout << "Waiting for client connection..." << endl;
         client_sock = accept(wel_sock, (struct sockaddr *)&client_addr, &client_len);
         if (client_sock < 0)
         {
